@@ -13,10 +13,13 @@ class LogicTest {
     @Test fun rejectsBlankName() { assertThrows(IllegalArgumentException::class.java) { sample(name = " ") } }
     @Test fun rejectsZeroReps() { assertThrows(IllegalArgumentException::class.java) { sample(reps = "0") } }
     @Test fun rejectsNegativeWeight() { assertThrows(IllegalArgumentException::class.java) { sample(kg = "-1") } }
-    @Test fun combinesSameDayAndFiltersExercise() {
-        val records = listOf(sample(kg = "45"), sample(date = "20.11.2026", kg = "40"),
-            sample(name = "  ЖИМ   ЛЁЖА ", kg = "42,5"), sample(name = "Присед", kg = "60"))
-        assertEquals(listOf(40.0, 45.0), dailyBest(records, "жим лёжа").map { it.kg })
+    @Test fun chartKeepsEachSetAndMatchesExercise() {
+        val records = listOf(3L to sample(kg = "45"), 4L to sample(date = "20.11.2026", kg = "40"),
+            1L to sample(name = "  ЖИМ   ЛЁЖА ", kg = "42,5"), 2L to sample(name = "Присед", kg = "60"))
+        val history = exerciseHistory(records, "жим лёжа", { it.second }, { it.first })
+        assertEquals(listOf(40.0, 42.5, 45.0), history.map { it.second.kg })
     }
-    @Test fun emptyHistory() { assertTrue(dailyBest(emptyList(), "Присед").isEmpty()) }
+    @Test fun weekStartsOnMondayEvenAcrossMonths() {
+        assertEquals(java.time.LocalDate.of(2026, 8, 31), weekStart(java.time.LocalDate.of(2026, 9, 6)))
+    }
 }

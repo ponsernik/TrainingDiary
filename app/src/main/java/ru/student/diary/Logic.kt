@@ -7,7 +7,6 @@ import java.util.Locale
 
 val dateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.uuuu").withResolverStyle(ResolverStyle.STRICT)
 data class SetRecord(val day: Long, val exercise: String, val reps: Int, val kg: Double)
-data class DayResult(val day: Long, val kg: Double)
 fun exerciseKey(name: String) = name.trim().replace(Regex("\\s+"), " ").lowercase(Locale.ROOT)
 fun readSet(date: String, name: String, reps: String, weight: String): SetRecord {
     val day = runCatching { LocalDate.parse(date.trim(), dateFormat) }.getOrNull()
@@ -23,10 +22,12 @@ fun readSet(date: String, name: String, reps: String, weight: String): SetRecord
     }
     return SetRecord(day.toEpochDay(), exercise, count, kg)
 }
-fun dailyBest(records: List<SetRecord>, name: String) = records
-    .filter { exerciseKey(it.exercise) == exerciseKey(name) }
-    .groupBy { it.day }
-    .toSortedMap()
-    .map { (day, sets) -> DayResult(day, sets.maxOf { it.kg }) }
+fun <T> exerciseHistory(entries: List<T>, name: String, record: (T) -> SetRecord, id: (T) -> Long): List<T> {
+    val key = exerciseKey(name)
+    return entries.filter { exerciseKey(record(it).exercise) == key }
+        .sortedWith(compareBy<T> { record(it).day }.thenBy(id))
+}
+
+fun weekStart(date: LocalDate): LocalDate = date.minusDays((date.dayOfWeek.value - 1).toLong())
 
 fun number(value: Double) = java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString().replace('.', ',')
